@@ -1,0 +1,42 @@
+name: Generate TZ DOCX
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install python-docx
+      - name: Generate DOCX
+        run: python scripts/generate_docx.py
+      - name: Commit DOCX
+        run: |
+          if [ -f "TZ_Logistics.docx" ]; then
+            if ! git diff --quiet -- TZ_Logistics.docx 2>/dev/null; then
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git add TZ_Logistics.docx
+              git commit -m "Add generated TZ_Logistics.docx (Times New Roman 14pt, line spacing 1.5)"
+              git push
+            else
+              echo "No changes to TZ_Logistics.docx"
+            fi
+          else
+            echo "TZ_Logistics.docx not found"
+            exit 1
+          fi
